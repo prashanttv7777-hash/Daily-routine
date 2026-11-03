@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">My Daily Life</string>
+    <string name="app_tagline">Plan Your Day, Improve Your Life!</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="nav_dashboard">Home</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_schedule">Schedule</string>
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_analytics">Reports</string>
+    <string name="notification_channel_name">Daily Task Reminders</string>
+    <string name="notification_channel_desc">Notifications for upcoming scheduled tasks and pending daily routines</string>
+</resources>

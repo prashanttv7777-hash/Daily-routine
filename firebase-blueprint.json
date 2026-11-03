@@ -1,0 +1,241 @@
+{
+  "entities": {
+    "DailyTask": {
+      "title": "DailyTask",
+      "description": "Represents a scheduled daily task with time range, category, priority, recurrence, reminder settings, and completion state.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated task owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Task title (1 to 150 characters)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed task notes (0 to 1000 characters)."
+        },
+        "category": {
+          "type": "string",
+          "description": "Task category such as Work, Health, Study, Personal, Fitness, Finance, Family."
+        },
+        "date": {
+          "type": "string",
+          "description": "Scheduled ISO date string YYYY-MM-DD (10 characters)."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "24-hour start time string HH:mm (5 characters)."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "24-hour end time string HH:mm (5 characters)."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether the task is completed."
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["High", "Medium", "Low"],
+          "description": "Task priority level."
+        },
+        "recurrence": {
+          "type": "string",
+          "enum": ["None", "Daily", "Weekly"],
+          "description": "Recurrence pattern for the task."
+        },
+        "recurrenceDays": {
+          "type": "string",
+          "description": "Comma-separated ISO day numbers (1=Mon..7=Sun) for recurring tasks."
+        },
+        "reminderEnabled": {
+          "type": "boolean",
+          "description": "Whether notifications are enabled before task start."
+        },
+        "reminderMinutesBefore": {
+          "type": "integer",
+          "description": "Minutes before startTime to trigger reminder notification (0 to 1440)."
+        },
+        "isImportantDate": {
+          "type": "boolean",
+          "description": "Highlights this task's date on the Calendar as a milestone/important date."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "description",
+        "category",
+        "date",
+        "startTime",
+        "endTime",
+        "completed",
+        "priority",
+        "recurrence",
+        "recurrenceDays",
+        "reminderEnabled",
+        "reminderMinutesBefore",
+        "isImportantDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RoutineItem": {
+      "title": "RoutineItem",
+      "description": "Represents a recurring daily/weekly routine habit block in the Morning-to-Night schedule.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated routine owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Routine habit title (1 to 150 characters)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Routine instructions or notes (0 to 500 characters)."
+        },
+        "timeSlot": {
+          "type": "string",
+          "enum": ["Morning", "Afternoon", "Evening", "Night"],
+          "description": "Time of day slot in the daily timetable."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "24-hour start time HH:mm (5 characters)."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "24-hour end time HH:mm (5 characters)."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category label (1 to 50 characters)."
+        },
+        "frequency": {
+          "type": "string",
+          "enum": ["Daily", "Weekdays", "Weekends", "Weekly"],
+          "description": "Recurrence frequency of the routine."
+        },
+        "daysOfWeek": {
+          "type": "string",
+          "description": "Comma-separated day numbers (1..7) when the routine applies."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether the routine is currently active."
+        },
+        "reminderMinutesBefore": {
+          "type": "integer",
+          "description": "Minutes before startTime to trigger reminder notification (0 to 1440)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "description",
+        "timeSlot",
+        "startTime",
+        "endTime",
+        "category",
+        "frequency",
+        "daysOfWeek",
+        "active",
+        "reminderMinutesBefore",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CloudBackup": {
+      "title": "CloudBackup",
+      "description": "Represents a user-created snapshot backup of tasks and routines for one-tap restore.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated backup owner."
+        },
+        "label": {
+          "type": "string",
+          "description": "User-readable backup label (1 to 100 characters)."
+        },
+        "taskCount": {
+          "type": "integer",
+          "description": "Number of tasks stored in this snapshot."
+        },
+        "routineCount": {
+          "type": "integer",
+          "description": "Number of routines stored in this snapshot."
+        },
+        "payloadJson": {
+          "type": "string",
+          "description": "Serialized JSON snapshot of tasks and routines."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "label",
+        "taskCount",
+        "routineCount",
+        "payloadJson",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": {
+        "$ref": "#/entities/DailyTask"
+      },
+      "description": "Per-user collection of daily tasks and calendar milestones."
+    },
+    "/users/{userId}/routines/{routineId}": {
+      "schema": {
+        "$ref": "#/entities/RoutineItem"
+      },
+      "description": "Per-user collection of daily and weekly routine templates."
+    },
+    "/users/{userId}/backups/{backupId}": {
+      "schema": {
+        "$ref": "#/entities/CloudBackup"
+      },
+      "description": "Per-user collection of snapshot backups for backup and restore."
+    }
+  }
+}

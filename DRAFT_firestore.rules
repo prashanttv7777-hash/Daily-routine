@@ -1,0 +1,201 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny all paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidDailyTask(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+             data.description is string && data.description.size() >= 0 && data.description.size() <= 1000 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 50 &&
+             data.date is string && data.date.size() == 10 &&
+             data.startTime is string && data.startTime.size() == 5 &&
+             data.endTime is string && data.endTime.size() == 5 &&
+             data.completed is bool &&
+             data.priority is string && data.priority.size() <= 16 &&
+             (data.priority == 'High' || data.priority == 'Medium' || data.priority == 'Low') &&
+             data.recurrence is string && data.recurrence.size() <= 16 &&
+             (data.recurrence == 'None' || data.recurrence == 'Daily' || data.recurrence == 'Weekly') &&
+             data.recurrenceDays is string && data.recurrenceDays.size() >= 0 && data.recurrenceDays.size() <= 50 &&
+             data.reminderEnabled is bool &&
+             data.reminderMinutesBefore is int && data.reminderMinutesBefore >= 0 && data.reminderMinutesBefore <= 1440 &&
+             data.isImportantDate is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidRoutineItem(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+             data.description is string && data.description.size() >= 0 && data.description.size() <= 500 &&
+             data.timeSlot is string && data.timeSlot.size() <= 16 &&
+             (data.timeSlot == 'Morning' || data.timeSlot == 'Afternoon' || data.timeSlot == 'Evening' || data.timeSlot == 'Night') &&
+             data.startTime is string && data.startTime.size() == 5 &&
+             data.endTime is string && data.endTime.size() == 5 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 50 &&
+             data.frequency is string && data.frequency.size() <= 16 &&
+             (data.frequency == 'Daily' || data.frequency == 'Weekdays' || data.frequency == 'Weekends' || data.frequency == 'Weekly') &&
+             data.daysOfWeek is string && data.daysOfWeek.size() >= 0 && data.daysOfWeek.size() <= 30 &&
+             data.active is bool &&
+             data.reminderMinutesBefore is int && data.reminderMinutesBefore >= 0 && data.reminderMinutesBefore <= 1440 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCloudBackup(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.label is string && data.label.size() >= 1 && data.label.size() <= 100 &&
+             data.taskCount is int && data.taskCount >= 0 && data.taskCount <= 10000 &&
+             data.routineCount is int && data.routineCount >= 0 && data.routineCount <= 10000 &&
+             data.payloadJson is string && data.payloadJson.size() >= 2 && data.payloadJson.size() <= 500000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      match /tasks/{taskId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(taskId) &&
+                      request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId &&
+                       existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() && isValidId(userId) && isValidId(taskId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'description', 'category', 'date',
+                           'startTime', 'endTime', 'completed', 'priority',
+                           'recurrence', 'recurrenceDays', 'reminderEnabled',
+                           'reminderMinutesBefore', 'isImportantDate',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'description', 'category', 'date',
+                           'startTime', 'endTime', 'completed', 'priority',
+                           'recurrence', 'recurrenceDays', 'reminderEnabled',
+                           'reminderMinutesBefore', 'isImportantDate',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidDailyTask(incoming());
+
+        allow update: if isSignedIn() && isValidDailyTask(incoming()) &&
+                         isValidId(userId) && isValidId(taskId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           // Action: Toggle completion
+                           incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+                           // Action: Full or partial task details edit
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'title', 'description', 'category', 'date',
+                             'startTime', 'endTime', 'completed', 'priority',
+                             'recurrence', 'recurrenceDays', 'reminderEnabled',
+                             'reminderMinutesBefore', 'isImportantDate', 'updatedAt'
+                           ])
+                         );
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(taskId) &&
+                         request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+
+      match /routines/{routineId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(routineId) &&
+                      request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId &&
+                       existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() && isValidId(userId) && isValidId(routineId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'description', 'timeSlot',
+                           'startTime', 'endTime', 'category', 'frequency',
+                           'daysOfWeek', 'active', 'reminderMinutesBefore',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'description', 'timeSlot',
+                           'startTime', 'endTime', 'category', 'frequency',
+                           'daysOfWeek', 'active', 'reminderMinutesBefore',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidRoutineItem(incoming());
+
+        allow update: if isSignedIn() && isValidRoutineItem(incoming()) &&
+                         isValidId(userId) && isValidId(routineId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           // Action: Toggle active state
+                           incoming().diff(existing()).affectedKeys().hasOnly(['active', 'updatedAt']) ||
+                           // Action: Edit routine details
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'title', 'description', 'timeSlot', 'startTime',
+                             'endTime', 'category', 'frequency', 'daysOfWeek',
+                             'active', 'reminderMinutesBefore', 'updatedAt'
+                           ])
+                         );
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(routineId) &&
+                         request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+
+      match /backups/{backupId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(backupId) &&
+                      request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId &&
+                       existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() && isValidId(userId) && isValidId(backupId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'label', 'taskCount', 'routineCount',
+                           'payloadJson', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'label', 'taskCount', 'routineCount',
+                           'payloadJson', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidCloudBackup(incoming());
+
+        allow update: if isSignedIn() && isValidCloudBackup(incoming()) &&
+                         isValidId(userId) && isValidId(backupId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'label', 'taskCount', 'routineCount', 'payloadJson', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(backupId) &&
+                         request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+    }
+  }
+}

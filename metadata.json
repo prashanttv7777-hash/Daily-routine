@@ -1,0 +1,6 @@
+{
+  "name": "My Daily Life",
+  "description": "Plan Your Day, Improve Your Life! A comprehensive daily routine, schedule, task manager, reminder, and productivity analytics app.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
